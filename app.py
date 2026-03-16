@@ -1,23 +1,22 @@
 import subprocess
 import sys
+import os
 
 # Fix for Streamlit Cloud: ultralytics installs opencv-python which needs
 # libGL.so.1 (unavailable on the container). Replace with headless version.
 try:
     import cv2
 except ImportError:
-    subprocess.run(
-        [sys.executable, "-m", "pip", "uninstall", "opencv-python", "-y"],
-        capture_output=True,
-    )
-    subprocess.run(
-        [sys.executable, "-m", "pip", "install", "opencv-python-headless"],
-        capture_output=True,
-    )
+    # Try replacing opencv-python with headless using uv (Streamlit Cloud's installer)
+    subprocess.run(["uv", "pip", "install", "--reinstall", "opencv-python-headless"])
+    # Fallback to pip if uv is not available
+    subprocess.run([sys.executable, "-m", "pip", "install", "--force-reinstall", "opencv-python-headless"])
     # Clear all partially loaded cv2 modules from cache
     for mod in list(sys.modules.keys()):
         if mod == "cv2" or mod.startswith("cv2."):
             del sys.modules[mod]
+    # Set library path in case libGL is in a non-standard location
+    os.environ["LD_LIBRARY_PATH"] = "/usr/lib/x86_64-linux-gnu:" + os.environ.get("LD_LIBRARY_PATH", "")
     import cv2
 
 import streamlit as st
