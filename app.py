@@ -1,3 +1,20 @@
+import subprocess
+import sys
+
+# Fix OpenCV on Streamlit Cloud: force headless version to avoid libGL.so.1 error
+try:
+    import cv2
+except ImportError:
+    subprocess.run([
+        sys.executable, "-m", "pip", "uninstall", "opencv-python", "-y"
+    ], capture_output=True)
+    subprocess.check_call([
+        sys.executable, "-m", "pip", "install", "opencv-python-headless"
+    ])
+    if "cv2" in sys.modules:
+        del sys.modules["cv2"]
+    import cv2
+
 import streamlit as st
 import streamlit.components.v1 as components
 import requests
@@ -9,7 +26,6 @@ import tempfile
 from datetime import datetime
 from fpdf import FPDF
 import os
-import cv2
 import numpy as np
 import base64
 import math
